@@ -5,7 +5,8 @@ description = "Skratitude Generation Code"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "docx",
+    "python-docx",
+    "docx-live-reload"
 ]
 
 [project.scripts]
