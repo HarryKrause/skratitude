@@ -1,12 +1,10 @@
-from pydoc import doc
+from pathlib import Path
 
 import docx
-from docx import section
 from docx.enum.table import WD_ALIGN_VERTICAL, WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.oxml import OxmlElement, parse_xml
-from docx.oxml.ns import nsdecls, qn
 from docx.shared import Inches, Mm, Pt, RGBColor
+from PIL import Image
 
 import word_doc.colors as COLORS
 import word_doc.helpers as helpers
@@ -34,6 +32,56 @@ class JournalGenerator:
         style_normal.font.name = "Georgia"
         style_normal.font.size = Pt(10.5)
         style_normal.font.color.rgb = COLORS.CHARCOAL
+
+    def add_full_page_image(self, image_path: Path):
+        """Add a local JPG image that fills an entire dedicated A5 page."""
+        image_file = Path(image_path).expanduser()
+
+        if not image_file.exists():
+            raise FileNotFoundError(f"Image not found: {image_file}")
+
+        if image_file.suffix.lower() not in {".jpg", ".jpeg"}:
+            raise ValueError("Only JPG/JPEG images are supported.")
+
+        with Image.open(image_file) as source:
+            if source.format not in {"JPEG", "JPG"}:
+                raise ValueError("The selected file is not a valid JPG image.")
+
+        section = self.journal.sections[-1]
+
+        body = self.journal._body._body
+        has_document_content = any(
+            child.tag.endswith(("}p", "}tbl"))
+            and (child.tag.endswith("}tbl") or child.text or len(child) > 0)
+            for child in body
+        )
+
+        section.page_width = Mm(148)
+        section.page_height = Mm(210)
+        section.top_margin = Mm(0)
+        section.bottom_margin = Mm(0)
+        section.left_margin = Mm(0)
+        section.right_margin = Mm(0)
+
+        paragraph = self.journal.add_paragraph()
+        paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        paragraph.paragraph_format.space_before = Pt(0)
+        paragraph.paragraph_format.space_after = Pt(0)
+        paragraph.paragraph_format.line_spacing = 1
+
+        run = paragraph.add_run()
+        run.add_picture(str(image_file), width=Mm(148), height=Mm(210))
+        run.add_break()
+
+    def add_new_section(
+        self, left: int = 10, right: int = 10, top: int = 10, bottom: int = 10
+    ) -> docx.section.Section:
+        section = self.journal.add_section()
+        section.left_margin = Mm(left)
+        section.right_margin = Mm(right)
+        section.top_margin = Mm(top)
+        section.bottom_margin = Mm(bottom)
+        return section
 
     def add_cover_page(self):
         p_spacer = self.journal.add_paragraph()
@@ -81,7 +129,9 @@ class JournalGenerator:
         qp = q_cell.paragraphs[0]
         qp.alignment = WD_ALIGN_PARAGRAPH.CENTER
         qp.paragraph_format.space_after = Pt(6)
-        qr = qp.add_run("“The present moment is the only time over which we have dominion.”")
+        qr = qp.add_run(
+            """“I saw a muskrat come out of a hole in the ice ... While I am looking at him, I am thinking what he is thinking of me. He is a different sort of man, that's all.”"""
+        )
         qr.font.name = "Georgia"
         qr.font.size = Pt(11.5)
         qr.font.italic = True
@@ -91,7 +141,7 @@ class JournalGenerator:
         qp2.alignment = WD_ALIGN_PARAGRAPH.CENTER
         qp2.paragraph_format.space_before = Pt(0)
         qp2.paragraph_format.space_after = Pt(0)
-        qr2 = qp2.add_run("— Thích Nhất Hạnh")
+        qr2 = qp2.add_run("— Sir Henry David Thoreau")
         qr2.font.name = "Calibri"
         qr2.font.size = Pt(10)
         qr2.font.color.rgb = COLORS.SAGE_MED
@@ -132,7 +182,8 @@ class JournalGenerator:
         self.journal.add_page_break()
 
     def add_goal_setting_page(self):
-        # Header for Page 2
+        section = self.add_new_section()
+
         p_h2 = self.journal.add_paragraph()
         p_h2.paragraph_format.space_after = Pt(4)
         r_h2 = p_h2.add_run("INTENTIONAL GOAL-SETTING & VISION")
@@ -304,6 +355,8 @@ class JournalGenerator:
         self.journal.add_page_break()
 
     def add_mindfulness_page(self):
+        section = self.add_new_section()
+
         # Top Date & Mood Bar
         top_bar = self.journal.add_table(rows=1, cols=2)
         top_bar.alignment = WD_TABLE_ALIGNMENT.CENTER
@@ -470,6 +523,7 @@ class JournalGenerator:
         self.journal.add_page_break()
 
     def add_weekly_reflection_page(self):
+        section = self.add_new_section()
         p_w_title = self.journal.add_paragraph()
         p_w_title.paragraph_format.space_after = Pt(2)
         r_wt = p_w_title.add_run("WEEKLY REFLECTION & ALIGNMENT")
@@ -543,26 +597,21 @@ class JournalGenerator:
 
 if __name__ == "__main__":
 
+    # Journal Init and Cover Page
     journal = JournalGenerator()
+    cover_img = Path(r"C:\Users\harry\git_projects\skratitude\Skratitude-cover-4.jpg")
+    journal.add_full_page_image(cover_img)
 
-    # ==============================================================================
-    # PAGE 1: COVER PAGE
-    # ==============================================================================
+    # Intro Page
     journal.add_cover_page()
 
-    # ==============================================================================
-    # PAGE 2: HOW TO USE & INTENTIONAL GOAL-SETTING
-    # ==============================================================================
+    # Goal-Setting Page
     journal.add_goal_setting_page()
 
-    # ==============================================================================
-    # PAGE 3: DAILY MINDFULNESS PRACTICE (MORNING & EVENING TEMPLATE)
-    # ==============================================================================
+    # Mindfulness Page
     journal.add_mindfulness_page()
 
-    # ==============================================================================
-    # PAGE 4: WEEKLY MINDFULNESS CHECK-IN & REFLECTION
-    # ==============================================================================
+    # Weekly Reflection Page
     journal.add_weekly_reflection_page()
 
     # Open Free-Writing Space
