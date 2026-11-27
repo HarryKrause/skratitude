@@ -1,0 +1,16 @@
+[project]
+name = "skratitude"
+version = "0.1.0"
+description = "Skratitude Generation Code"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "docx",
+]
+
+[project.scripts]
+# Defines a command-line entry point
+# start-app = "my_uv_project.main:app"
+
+[tool.uv]
+package = true
