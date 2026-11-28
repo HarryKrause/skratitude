@@ -1,13 +1,14 @@
 from pathlib import Path
 
 import docx
-from docx.enum.table import WD_ALIGN_VERTICAL, WD_TABLE_ALIGNMENT
+from docx.enum.table import WD_ALIGN_VERTICAL, WD_TABLE_ALIGNMENT, WD_CELL_VERTICAL_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Inches, Mm, Pt, RGBColor
 from PIL import Image
 
 import word_doc.colors as COLORS
 import word_doc.helpers as helpers
+from word_doc.helpers import A5PageDimensions
 
 
 class JournalGenerator:
@@ -19,12 +20,12 @@ class JournalGenerator:
     def setup_pages(self):
         # Page setup - A5 with balanced margins
         for section in self.journal.sections:
-            section.page_width = Mm(148)
-            section.page_height = Mm(210)
-            section.top_margin = Mm(18)
-            section.bottom_margin = Mm(18)
-            section.left_margin = Mm(20)
-            section.right_margin = Mm(20)
+            section.page_width = Mm(A5PageDimensions.WIDTH_MM)
+            section.page_height = Mm(A5PageDimensions.HEIGHT_MM)
+            section.top_margin = Mm(A5PageDimensions.TOP_MARGIN_MM)
+            section.bottom_margin = Mm(A5PageDimensions.BOTTOM_MARGIN_MM)
+            section.left_margin = Mm(A5PageDimensions.LEFT_MARGIN_MM)
+            section.right_margin = Mm(A5PageDimensions.RIGHT_MARGIN_MM)
 
     def setup_style(self):
         # Set default Normal font
@@ -56,8 +57,8 @@ class JournalGenerator:
             for child in body
         )
 
-        section.page_width = Mm(148)
-        section.page_height = Mm(210)
+        section.page_width = Mm(A5PageDimensions.WIDTH_MM)
+        section.page_height = Mm(A5PageDimensions.HEIGHT_MM)
         section.top_margin = Mm(0)
         section.bottom_margin = Mm(0)
         section.left_margin = Mm(0)
@@ -70,7 +71,7 @@ class JournalGenerator:
         paragraph.paragraph_format.line_spacing = 1
 
         run = paragraph.add_run()
-        run.add_picture(str(image_file), width=Mm(148), height=Mm(210))
+        run.add_picture(str(image_file), width=Mm(A5PageDimensions.WIDTH_MM), height=Mm(A5PageDimensions.HEIGHT_MM))
         run.add_break()
 
     def add_new_section(
@@ -94,28 +95,6 @@ class JournalGenerator:
         r_line.font.name = "Georgia"
         r_line.font.size = Pt(14)
         r_line.font.color.rgb = RGBColor(197, 168, 128)
-
-        # Main Title
-        p_title = self.journal.add_paragraph()
-        p_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        p_title.paragraph_format.space_before = Pt(18)
-        p_title.paragraph_format.space_after = Pt(8)
-        r_title = p_title.add_run("MINDFULNESS & INTENTION")
-        r_title.font.name = "Georgia"
-        r_title.font.size = Pt(28)
-        r_title.font.bold = True
-        r_title.font.color.rgb = COLORS.SAGE_DARK
-
-        # Subtitle
-        p_sub = self.journal.add_paragraph()
-        p_sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        p_sub.paragraph_format.space_before = Pt(0)
-        p_sub.paragraph_format.space_after = Pt(36)
-        r_sub = p_sub.add_run("A Guided Journal for Daily Presence, Clarity, and Growth")
-        r_sub.font.name = "Georgia"
-        r_sub.font.size = Pt(13)
-        r_sub.font.italic = True
-        r_sub.font.color.rgb = COLORS.MUTED_GRAY
 
         # Quote Box on Cover
         quote_tbl = self.journal.add_table(rows=1, cols=1)
@@ -144,7 +123,7 @@ class JournalGenerator:
         qr2 = qp2.add_run("— Sir Henry David Thoreau")
         qr2.font.name = "Calibri"
         qr2.font.size = Pt(10)
-        qr2.font.color.rgb = COLORS.SAGE_MED
+        qr2.font.color.rgb = COLORS.SAGE_DARK
 
         # Owner / Date Block at Bottom of Cover
         p_bot_spacer = self.journal.add_paragraph()
@@ -152,32 +131,26 @@ class JournalGenerator:
 
         meta_tbl = self.journal.add_table(rows=2, cols=2)
         meta_tbl.alignment = WD_TABLE_ALIGNMENT.CENTER
-        meta_fields = [
-            ("THIS JOURNAL BELONGS TO:", "[Enter Your Name]"),
-            ("DATE STARTED:", "[Month / Year]"),
-        ]
-        for idx, (label, placeholder) in enumerate(meta_fields):
-            row = meta_tbl.rows[idx]
+        meta_fields = ["THIS JOURNAL BELONGS TO:", "DATE STARTED:"]
+        for index, label in enumerate(meta_fields):
+            row = meta_tbl.rows[index]
             row.height = Pt(28)
             c0, c1 = row.cells[0], row.cells[1]
-            c0.width = Inches(2.4)
-            c1.width = Inches(3.2)
+            c0.width = Mm(A5PageDimensions.WIDTH_MM - 30)
+            c1.width = Mm(A5PageDimensions.WIDTH_MM - 30)
+            c0.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.BOTTOM
+            c1.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.BOTTOM
             helpers.set_cell_bottom_border_only(c1, color=COLORS.HEX_BORDER, sz="4")
 
             p0 = c0.paragraphs[0]
             p0.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-            r0 = p0.add_run(label + "  ")
+            p0.paragraph_format.space_before = Pt(0)
+            p0.paragraph_format.space_after = Pt(0)
+            r0 = p0.add_run(label)
             r0.font.name = "Calibri"
             r0.font.size = Pt(9.5)
             r0.font.bold = True
             r0.font.color.rgb = COLORS.SAGE_DARK
-
-            p1 = c1.paragraphs[0]
-            r1 = p1.add_run(placeholder)
-            r1.font.name = "Georgia"
-            r1.font.size = Pt(10)
-            r1.font.italic = True
-            r1.font.color.rgb = COLORS.MUTED_GRAY
 
         self.journal.add_page_break()
 
@@ -610,7 +583,7 @@ if __name__ == "__main__":
 
     # Mindfulness Page
     journal.add_mindfulness_page()
-
+    
     # Weekly Reflection Page
     journal.add_weekly_reflection_page()
 

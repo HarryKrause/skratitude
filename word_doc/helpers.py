@@ -6,9 +6,17 @@ from docx.enum.table import WD_ALIGN_VERTICAL, WD_TABLE_ALIGNMENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
-from docx.shared import Inches, Pt
+from docx.shared import Mm, Pt
 
 import word_doc.colors as COLORS
+
+class A5PageDimensions:
+    WIDTH_MM = 148
+    HEIGHT_MM = 210
+    TOP_MARGIN_MM = 18
+    BOTTOM_MARGIN_MM = 18
+    LEFT_MARGIN_MM = 20
+    RIGHT_MARGIN_MM = 20
 
 
 def set_cell_background(cell, fill_hex):
@@ -101,7 +109,7 @@ def add_writing_lines(container, num_lines=3, line_spacing_pt=24):
     for row in tbl.rows:
         row.height = Pt(line_spacing_pt)
         cell = row.cells[0]
-        cell.width = Inches(6.8)
+        cell.width = Mm(A5PageDimensions.WIDTH_MM - 30)
         set_cell_bottom_border_only(cell, color=COLORS.HEX_BORDER, sz="4")
         set_cell_margins(cell, top=40, bottom=20, left=40, right=40)
         p = cell.paragraphs[0]
